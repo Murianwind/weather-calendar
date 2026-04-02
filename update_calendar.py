@@ -4,31 +4,28 @@ import pytz
 from datetime import datetime, timedelta
 from icalendar import Calendar, Event
 
-# --- [설정] 본인 지역에 맞춰 수정 가능 ---
-NX, NY = 60, 127             # 단기예보 격자 (서울)
-REG_ID = '11B10101'          # 중기육상예보 구역 (서울)
-REG_TEMP_ID = '11B10101'     # 중기기온예보 구역 (서울)
+# --- 설정 ---
+NX, NY = 60, 127             # 서울 격자
+REG_ID = '11B10101'          # 중기육상(서울)
+REG_TEMP_ID = '11B10101'     # 중기기온(서울)
 API_KEY = os.environ.get('KMA_API_KEY')
 
-def get_weather_emoji(sky, pty):
-    """기상청 하늘상태(SKY), 강수형태(PTY) 코드를 이모지로 변환"""
+def get_emoji(sky, pty):
     if pty and pty != '0':
-        if pty in ['1', '4']: return "🌧️" # 비/소나기
-        if pty == '2': return "🌨️"        # 비/눈
-        if pty == '3': return "❄️"        # 눈
-    if sky == '1': return "☀️"            # 맑음
-    if sky == '3': return "⛅"            # 구름많음
-    if sky == '4': return "☁️"            # 흐림
+        if pty in ['1', '4']: return "🌧️"
+        if pty == '2': return "🌨️"
+        if pty == '3': return "❄️"
+    if sky == '1': return "☀️"
+    if sky == '3': return "⛅"
+    if sky == '4': return "☁️"
     return "🌡️"
 
-def fetch_kma_text(url):
-    """API 허브로부터 텍스트 데이터 수집"""
+def fetch_data(url):
     try:
         res = requests.get(url)
         if res.status_code == 200:
             return res.text
-    except:
-        return None
+    except: return None
     return None
 
 def main():
@@ -36,45 +33,53 @@ def main():
     now = datetime.now(seoul_tz)
     cal = Calendar()
     cal.add('X-WR-CALNAME', '기상청 날씨 달력')
-    cal.add('X-PUBLISHED-TTL', 'PT3H')
-
-    # 1. 단기 예보 (오늘 ~ 3일차)
-    # API: 단기예보 상세 (vsc_sfc_af_dtl)
-    base_date = now.strftime('%Y%m%d')
-    short_url = f"https://apihub.kma.go.kr/api/typ01/url/vsc_sfc_af_dtl.php?base_date={base_date}&nx={NX}&ny={NY}&authKey={API_KEY}"
-    short_data = fetch_kma_text(short_url)
-
-    # 2. 중기 예보 (4일차 ~ 10일차)
-    # API: 중기육상/기온예보 (mid_sfc_af_dtl / mid_temp_af_dtl)
-    # 발표시간 기준(tm_fc)은 보통 0600 또는 1800
-    tm_fc = now.strftime('%Y%m%d0600')
-    mid_url = f"https://apihub.kma.go.kr/api/typ01/url/mid_sfc_af_dtl.php?reg_id={REG_ID}&tm_fc={tm_fc}&authKey={API_KEY}"
-    mid_data = fetch_kma_text(mid_url)
-
-    # --- [데이터 파싱 및 이벤트 생성] ---
-    # 실제 기상청 TEXT 응답에서 # 주석을 제외한 데이터를 읽어 이벤트를 생성합니다.
-    # 아래는 구조적 예시이며, 데이터가 들어오면 자동으로 날짜별로 생성됩니다.
     
+    # 1. 단기 예보 (0~3일) 파싱 로직
+    base_date = now.strftime('%Y%m%d')
+    url_short = f"https://apihub.kma.go.kr/api/typ01/url/vsc_sfc_af_dtl.php?base_date={base_date}&nx={NX}&ny={NY}&authKey={API_KEY}"
+    raw_short = fetch_data(url_short)
+    
+    daily_data = {} # 날짜별로 묶기
+    if raw_short:
+        lines = raw_short.split('\n')
+        for line in lines:
+            if line.startswith('#') or len(line) < 10: continue
+            cols = line.split()
+            # 기상청 단기예보 컬럼 순서: 일자(0), 시간(1), ... 기온(12), 하늘(13), 강수형태(14), 강수확률(15), 습도(16), 풍속(17)
+            dt, tm = cols[0], cols[1]
+            tmp, sky, pty, pop, reh, wsd = cols[12], cols[13], cols[14], cols[15], cols[16], cols[17]
+            
+            if dt not in daily_data: daily_data[dt] = {'tmps': [], 'details': []}
+            daily_data[dt]['tmps'].append(float(tmp))
+            emoji = get_emoji(sky, pty)
+            daily_data[dt]['details'].append(f"[{tm[:2]}:00] {emoji} {tmp}°C, ☔{pop}%, 💧{reh}%, 💨{wsd}m/s")
+
+    # 2. 캘린더 생성 (0~10일)
     for i in range(11):
-        target_date = (now + timedelta(days=i)).date()
+        target_dt_obj = now + timedelta(days=i)
+        target_dt_str = target_dt_obj.strftime('%Y%m%d')
         event = Event()
         
-        if i <= 2: # 단기 (시간대별 상세)
-            event.add('summary', f"☀️ 5° / 15° (예보)") # 실제 파싱값 대입
-            desc = "09:00: ☀️ 10°C, 💨 2m/s, ☔ 0%\n12:00: ☀️ 14°C, 💨 3m/s, ☔ 10%"
-            event.add('description', desc)
-        else: # 중기 (일별 요약)
-            event.add('summary', f"⛅ 4° ~ 12°")
-            event.add('description', "오전: 구름많음 / 오후: 맑음")
-            
-        event.add('dtstart', target_date)
-        event.add('dtend', target_date + timedelta(days=1))
+        if target_dt_str in daily_data:
+            # 단기예보가 있는 날 (0~3일)
+            d = daily_data[target_dt_str]
+            t_min, t_max = min(d['tmps']), max(d['tmps'])
+            # 대표 이모지는 낮 12시 기준으로 설정 (없으면 첫번째)
+            rep_emoji = d['details'][len(d['details'])//2].split()[1]
+            event.add('summary', f"{rep_emoji} {t_min}° / {t_max}°")
+            event.add('description', "\n".join(d['details']))
+        else:
+            # 중기예보 구간 (4~10일) - 실제 중기 API 연동 전 샘플
+            event.add('summary', f"⛅ {10+i}° / {20+i}°")
+            event.add('description', "중기 예보 정보 데이터 준비 중")
+
+        event.add('dtstart', target_dt_obj.date())
+        event.add('dtend', target_dt_obj.date() + timedelta(days=1))
         cal.add_component(event)
 
-    # 파일 저장
     with open('weather.ics', 'wb') as f:
         f.write(cal.to_ical())
-    print("Calendar generated successfully.")
+    print("Successfully updated weather.ics")
 
 if __name__ == "__main__":
     main()
