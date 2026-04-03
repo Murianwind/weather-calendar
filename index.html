@@ -14,8 +14,8 @@
         h2 { color: var(--primary); margin-top: 0; display: flex; align-items: center; font-size: 1.5em; }
         .step-num { background: var(--primary); color: white; width: 32px; height: 32px; text-align: center; border-radius: 50%; font-size: 18px; margin-right: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: bold; }
         .wait-box { background: #fff7ed; border: 1px solid #fed7aa; padding: 20px; border-radius: 10px; margin-top: 15px; color: #9a3412; }
+        .alert-box { background: #fee2e2; border: 1px solid #fecaca; padding: 20px; border-radius: 10px; margin-top: 15px; color: #991b1b; }
         .info-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 10px; margin-top: 20px; font-size: 0.95em; }
-        .info-box b { color: var(--primary); }
         .highlight { color: var(--accent); font-weight: bold; }
         code { background: #fee2e2; padding: 3px 6px; border-radius: 4px; color: #991b1b; font-family: monospace; font-weight: bold; }
         
@@ -69,11 +69,18 @@
     </div>
 
     <div class="card">
-        <h2><span class="step-num">5</span> 정보 업데이트</h2>
-        <p>내 저장소의 <code>update_calendar.py</code> 파일을 열고 위에서 찾은 값으로 수정한 뒤 <b>Commit</b> 하세요.</p>
+        <h2><span class="step-num">5</span> 정보 업데이트 및 권한 승인</h2>
+        <p>1. 내 저장소의 <code>update_calendar.py</code> 파일을 열고 위에서 찾은 값으로 수정한 뒤 <b>Commit</b> 하세요.</p>
+        
+        <div class="alert-box">
+            <strong>⚠️ 중요: 자동 업데이트 활성화</strong><br>
+            GitHub 정책상 Fork된 저장소는 자동 실행 기능이 꺼져 있습니다.<br>
+            상단 <b>[Actions]</b> 탭 클릭 후 <b>"I understand my workflows, go ahead and enable them"</b> 초록색 버튼을 반드시 눌러주세요!
+        </div>
+
         <div class="wait-box">
             <strong>⏳ 자동 빌드 대기</strong><br>
-            GitHub Actions 탭에서 초록색 체크가 뜰 때까지 약 1분간 기다려주세요.
+            버튼 클릭 후 Actions 탭에서 초록색 체크가 뜰 때까지 약 1분간 기다려주세요.
         </div>
     </div>
 
