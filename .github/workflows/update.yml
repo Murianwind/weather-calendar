@@ -1,5 +1,8 @@
 name: Update Weather ICS
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  
 on:
   schedule:
     - cron: '15 17,20,23,2,5,8,11,14 * * *'
