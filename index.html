@@ -17,15 +17,11 @@
         .highlight { color: var(--accent); font-weight: bold; }
         code { background: #fee2e2; padding: 3px 6px; border-radius: 4px; color: #991b1b; font-family: monospace; font-weight: bold; }
         
-        /* 입력창 영역 */
-        .search-box { margin: 20px 0; }
-        .info-msg { font-size: 0.9em; color: #2563eb; margin-bottom: 8px; font-weight: 600; }
-        input#address { width: 100%; padding: 18px; border: 2px solid #bfdbfe; border-radius: 10px; box-sizing: border-box; font-size: 18px; margin-bottom: 10px; }
-        
+        /* 입력 도구 스타일 */
+        select, input { width: 100%; padding: 15px; margin: 10px 0; border: 2px solid #bfdbfe; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
         .btn-calc { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.2s; }
         .btn-calc:hover { background: #1d4ed8; }
-        
-        div#result { display:none; margin-top: 25px; padding: 25px; background: #eff6ff; border-radius: 12px; border: 1px solid #bfdbfe; font-size: 1.1em; }
+        div#result { display:none; margin-top: 25px; padding: 25px; background: #eff6ff; border-radius: 12px; border: 1px solid #bfdbfe; }
         .example-img { width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 20px; }
     </style>
 </head>
@@ -36,55 +32,79 @@
 
     <div class="card">
         <h2><span class="step-num">1</span> 프로젝트 포크 (Fork)</h2>
-        <p>상단 <b class="highlight">원본 저장소</b> 링크 접속 후 오른쪽 상단의 <b>[Fork]</b> 버튼을 눌러 내 계정으로 가져옵니다.</p>
+        <p>위 <b class="highlight">원본 저장소</b> 링크 접속 후 오른쪽 상단의 <b>[Fork]</b> 버튼을 눌러 내 계정으로 복사합니다.</p>
     </div>
 
     <div class="card">
         <h2><span class="step-num">2</span> 기상청 API 인증키 발급</h2>
-        <p>1. <a href="https://apihub.kma.go.kr/" target="_blank">기상청 API 허브</a> 회원가입 후 <b>[마이페이지] → [인증키 현황]</b>에서 키를 복사합니다.</p>
-        <p>2. 메뉴에서 <b>단기예보, 중기기온, 중기육상예보</b>를 각각 찾아 <b class="highlight">API활용신청</b>을 완료하세요.</p>
+        <p>1. <a href="https://apihub.kma.go.kr/" target="_blank">기상청 API 허브</a> 회원가입 후 <b>[인증키 현황]</b>에서 키를 복사합니다.</p>
+        <p>2. 메뉴에서 <b>단기예보, 중기기온, 중기육상예보</b>를 각각 활용 신청하세요.</p>
     </div>
 
     <div class="card">
         <h2><span class="step-num">3</span> GitHub Secrets 설정</h2>
-        <p>내 저장소 <b>Settings → Secrets and variables → Actions</b>에서 <code>KMA_API_KEY</code>라는 이름으로 인증키를 저장합니다.</p>
+        <p>내 저장소 <b>Settings → Secrets → Actions</b>에서 <code>KMA_API_KEY</code> 이름으로 인증키를 저장합니다.</p>
     </div>
 
     <div class="card">
         <h2><span class="step-num">4</span> 내 동네 설정값 찾기</h2>
-        <div class="search-box">
-            <p class="info-msg">💡 정확한 검색을 위해 "시/도" 이름을 포함하여 입력해 주세요. (예: 서울 봉화산로, 제주 이호일동)</p>
-            <input type="text" id="address" placeholder="주소를 입력하세요">
-            <button class="btn-calc" onclick="findCoords()">좌표 및 구역코드 계산</button>
-        </div>
+        <p><b>① 가까운 예보 지점을 선택하세요:</b></p>
+        <select id="regionSelect">
+            <option value="">데이터 로딩 중...</option>
+        </select>
+        
+        <p><b>② 동네 주소(도로명)를 입력하세요:</b></p>
+        <input type="text" id="address" placeholder="예: 뚝섬로 599 (정확한 좌표 추출용)">
+        <button class="btn-calc" onclick="calculateAll()">설정값 계산하기</button>
         
         <div id="result">
-            <p>👇 <b>update_calendar.py에 복사할 값입니다:</b></p>
+            <p>✅ <b>update_calendar.py에 복사할 값:</b></p>
             <ul>
                 <li>NX: <code id="res_nx">-</code> / NY: <code id="res_ny">-</code></li>
-                <li>REG_ID_LAND (육상): <code id="res_land">-</code></li>
-                <li>REG_ID_TEMP (기온): <code id="res_temp">-</code></li>
+                <li>REG_ID_LAND: <code id="res_land">-</code></li>
+                <li>REG_ID_TEMP: <code id="res_temp">-</code></li>
             </ul>
         </div>
     </div>
 
     <div class="card">
-        <h2><span class="step-num">5</span> 코드 수정 및 자동 생성</h2>
-        <p>1. <code>update_calendar.py</code> 파일을 열고 위에서 찾은 값으로 수정한 뒤 <b>Commit</b> 하세요.</p>
+        <h2><span class="step-num">5</span> 정보 업데이트</h2>
+        <p>내 저장소의 <code>update_calendar.py</code> 파일을 열고 위에서 찾은 값으로 수정한 뒤 <b>Commit</b> 하세요.</p>
         <div class="wait-box">
             <strong>⏳ 자동 빌드 대기</strong><br>
-            GitHub Actions 탭에서 작업이 완료되면 <code>weather.ics</code> 파일이 생성됩니다.
+            GitHub Actions 탭에서 초록색 체크가 뜰 때까지 약 1분간 기다려주세요.
         </div>
     </div>
 
     <div class="card" style="border-top: 6px solid var(--success);">
-        <h2><span class="step-num">6</span> 캘린더 구독</h2>
-        <p>생성된 <code>weather.ics</code> 파일의 <b>Raw</b> 주소를 복사하여 스마트폰 달력 앱에 등록하면 끝!</p>
+        <h2><span class="step-num">6</span> 캘린더 구독하기</h2>
+        <p>생성된 <code>weather.ics</code> 파일의 <b>Raw</b> 주소를 복사하여 휴대폰 달력 앱에 등록하세요.</p>
         <img src="./calendar.png" alt="구독 예시" class="example-img">
     </div>
 
     <script>
-        // 기상청 격자 변환 로직
+        // 1. JSON 데이터 로드하여 드롭다운 채우기
+        async function loadRegions() {
+            try {
+                const res = await fetch('./region_codes.json');
+                const data = await res.json();
+                const select = document.getElementById('regionSelect');
+                select.innerHTML = '<option value="">-- 가까운 지점 선택 --</option>';
+                
+                data.sort((a, b) => a.name.localeCompare(b.name)).forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.temp; // 지점 코드
+                    opt.dataset.land = item.land; // 육상 코드 저장
+                    opt.text = `${item.name} (${item.temp})`;
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                document.getElementById('regionSelect').innerHTML = '<option>데이터 로드 실패</option>';
+            }
+        }
+        loadRegions();
+
+        // 2. 기상청 격자 변환 로직
         const RE = 6371.00877; const GRID = 5.0; const SLAT1 = 30.0; const SLAT2 = 60.0;
         const OLON = 126.0; const OLAT = 38.0; const XO = 43; const YO = 136;
 
@@ -103,59 +123,30 @@
             return { x: Math.floor(ra * Math.sin(theta) + XO + 0.5), y: Math.floor(ro - ra * Math.cos(theta) + YO + 0.5) };
         }
 
-        async function findCoords() {
-            const addrInput = document.getElementById('address').value;
-            if (!addrInput) return alert("주소를 입력해주세요!");
+        // 3. 최종 계산 실행
+        async function calculateAll() {
+            const select = document.getElementById('regionSelect');
+            const tempId = select.value;
+            const landId = select.options[select.selectedIndex]?.dataset.land;
+            const address = document.getElementById('address').value;
+
+            if (!tempId || !address) return alert("지점 선택과 주소 입력을 모두 완료해 주세요!");
 
             try {
-                // 1. 위경도 좌표 획득
-                const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addrInput)}`);
-                const geoData = await geoRes.json();
-                if (geoData.length === 0) return alert("주소를 찾을 수 없습니다. 시/도 이름을 포함해 보세요.");
-                
-                const lat = parseFloat(geoData[0].lat);
-                const lon = parseFloat(geoData[0].lon);
-                const grid = getGrid(lat, lon);
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+                const data = await res.json();
+                if (data.length === 0) return alert("주소를 찾을 수 없습니다.");
 
-                // 2. 240개 지역 코드 데이터 로드
-                const codeRes = await fetch('./region_codes.json');
-                const codeData = await codeRes.json();
+                const grid = getGrid(parseFloat(data[0].lat), parseFloat(data[0].lon));
 
-                // 3. 정밀 매칭 로직 (육상/기온 분리)
-                let matchedLand = "11B00000"; // 기본값 (서울경기)
-                let matchedTemp = "11B10101"; // 기본값 (서울)
-                
-                // [개선] 육상(A) 매칭: 점(.)으로 묶인 이름 분리 대응
-                for (const item of codeData) {
-                    if (item.type === 'A') {
-                        const areaNames = item.name.split('.');
-                        if (areaNames.some(n => addrInput.includes(n.trim())) || addrInput.includes(item.name)) {
-                            matchedLand = item.id;
-                            break; 
-                        }
-                    }
-                }
-                
-                // [개선] 기온(C) 매칭: 주소 내 가장 구체적인 지역명 매칭
-                let bestTempScore = 0;
-                for (const item of codeData) {
-                    if (item.type === 'C' && addrInput.includes(item.name)) {
-                        if (item.name.length > bestTempScore) {
-                            matchedTemp = item.id;
-                            bestTempScore = item.name.length;
-                        }
-                    }
-                }
-
-                // 4. 결과 출력
                 document.getElementById('res_nx').innerText = grid.x;
                 document.getElementById('res_ny').innerText = grid.y;
-                document.getElementById('res_land').innerText = matchedLand;
-                document.getElementById('res_temp').innerText = matchedTemp;
+                document.getElementById('res_temp').innerText = tempId;
+                document.getElementById('res_land').innerText = landId;
                 document.getElementById('result').style.display = 'block';
-
+                window.scrollTo(0, document.body.scrollHeight);
             } catch (e) {
-                alert("데이터 로드 오류! region_codes.json 파일이 필요합니다.");
+                alert("처리 중 오류가 발생했습니다.");
             }
         }
     </script>
