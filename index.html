@@ -14,6 +14,8 @@
         h2 { color: var(--primary); margin-top: 0; display: flex; align-items: center; font-size: 1.5em; }
         .step-num { background: var(--primary); color: white; width: 32px; height: 32px; text-align: center; border-radius: 50%; font-size: 18px; margin-right: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: bold; }
         .wait-box { background: #fff7ed; border: 1px solid #fed7aa; padding: 20px; border-radius: 10px; margin-top: 15px; color: #9a3412; }
+        .info-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 10px; margin-top: 20px; font-size: 0.95em; }
+        .info-box b { color: var(--primary); }
         .highlight { color: var(--accent); font-weight: bold; }
         code { background: #fee2e2; padding: 3px 6px; border-radius: 4px; color: #991b1b; font-family: monospace; font-weight: bold; }
         
@@ -78,22 +80,30 @@
     <div class="card" style="border-top: 6px solid var(--success);">
         <h2><span class="step-num">6</span> 캘린더 구독하기</h2>
         <p>생성된 <code>weather.ics</code> 파일의 <b>Raw</b> 주소를 복사하여 휴대폰 달력 앱에 등록하세요.</p>
+        
+        <div class="info-box">
+            <b>⏰ 업데이트 주기 안내</b>
+            <ul style="margin-top: 10px; padding-left: 20px;">
+                <li><b>단기 예보 (오늘~3일):</b> 매 3시간마다 최신 정보로 자동 갱신됩니다.</li>
+                <li><b>중기 예보 (4일~10일):</b> 하루 2번(06시, 18시) 최신 정보로 자동 갱신됩니다.</li>
+            </ul>
+            <p style="margin-top: 10px; font-size: 0.9em; color: #64748b;">※ 실제 달력 앱에 반영되는 속도는 구독 서비스의 갱신 주기 설정에 따라 다를 수 있습니다.</p>
+        </div>
+
         <img src="./calendar.png" alt="구독 예시" class="example-img">
     </div>
 
     <script>
-        // 1. JSON 로드 (드롭다운에 이름만 표시)
         async function loadRegions() {
             try {
                 const res = await fetch('./region_codes.json');
                 const data = await res.json();
                 const select = document.getElementById('regionSelect');
                 select.innerHTML = '<option value="">-- 가까운 지점 선택 --</option>';
-                
                 data.sort((a, b) => a.name.localeCompare(b.name)).forEach(item => {
                     const opt = document.createElement('option');
                     opt.value = item.id; 
-                    opt.text = item.name; // 코드(id) 제거, 지명만 표시
+                    opt.text = item.name;
                     select.appendChild(opt);
                 });
             } catch (e) {
@@ -102,7 +112,6 @@
         }
         loadRegions();
 
-        // 2. 기상청 격자 변환 공식
         const RE = 6371.00877; const GRID = 5.0; const SLAT1 = 30.0; const SLAT2 = 60.0;
         const OLON = 126.0; const OLAT = 38.0; const XO = 43; const YO = 136;
 
@@ -121,7 +130,6 @@
             return { x: Math.floor(ra * Math.sin(theta) + XO + 0.5), y: Math.floor(ro - ra * Math.cos(theta) + YO + 0.5) };
         }
 
-        // 3. LAND 코드 자동 매칭
         function getLandCode(tempId) {
             if (tempId.startsWith("11B")) return "11B00000";
             if (tempId.startsWith("11D1")) return "11D10000";
@@ -136,7 +144,6 @@
             return "11B00000";
         }
 
-        // 4. 최종 계산 및 스크롤
         async function calculateAll() {
             const tempId = document.getElementById('regionSelect').value;
             const address = document.getElementById('address').value;
@@ -160,7 +167,6 @@
                 document.getElementById('res_land').innerText = landId;
                 
                 resultDiv.style.display = 'block';
-                // 결과창으로 부드럽게 이동
                 resultDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
             } catch (e) {
