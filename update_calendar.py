@@ -64,8 +64,7 @@ def main():
 
     # --- [2. 데이터 수집 판단] ---
     # 파일이 없거나, 정해진 업데이트 시간이면 API 호출 / 아니면 백업 사용
-    is_mid_update_time = now.hour in [5, 17]
-    should_fetch_mid = (not has_old_file) or (not old_mid_events) or is_mid_update_time
+    should_fetch_mid = True
 
     # --- [3. 단기 예보 수집] (항상 실행) ---
     base_date = now.strftime('%Y%m%d')
