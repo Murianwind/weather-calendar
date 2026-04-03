@@ -14,6 +14,8 @@
         h2 { color: var(--primary); margin-top: 0; display: flex; align-items: center; font-size: 1.5em; }
         .step-num { background: var(--primary); color: white; width: 32px; height: 32px; text-align: center; border-radius: 50%; font-size: 18px; margin-right: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: bold; }
         .sub-step { background: #f1f5f9; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #cbd5e1; }
+        .wait-box { background: #fff7ed; border: 1px solid #fed7aa; padding: 20px; border-radius: 10px; margin-top: 15px; color: #9a3412; }
+        .highlight { color: var(--accent); font-weight: bold; }
         code { background: #fee2e2; padding: 3px 6px; border-radius: 4px; color: #991b1b; font-family: monospace; font-weight: bold; }
         input#address { width: 100%; padding: 18px; margin: 15px 0; border: 2px solid #bfdbfe; border-radius: 10px; box-sizing: border-box; font-size: 18px; }
         .btn-calc { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.2s; }
@@ -28,24 +30,53 @@
     <p class="subtitle">원본 저장소: <a href="https://github.com/Murianwind/weather-calendar" target="_blank" class="repo-link">github.com/Murianwind/weather-calendar</a></p>
 
     <div class="card">
-        <h2><span class="step-num">5</span> 내 동네 설정값 찾기</h2>
-        <p>주소를 입력하면 전국의 기상청 좌표와 구역코드를 자동으로 찾아드립니다.</p>
+        <h2><span class="step-num">1</span> 프로젝트 포크 (Fork)</h2>
+        <p>상단 <b class="highlight">원본 저장소</b> 링크 접속 후 오른쪽 상단의 <b>[Fork]</b> 버튼을 눌러 내 계정으로 가져옵니다.</p>
+    </div>
+
+    <div class="card">
+        <h2><span class="step-num">2</span> 기상청 API 인증키 발급</h2>
+        <p>1. <a href="https://apihub.kma.go.kr/" target="_blank">기상청 API 허브</a> 회원가입 후 <b>[마이페이지] → [인증키 현황]</b>에서 키를 복사합니다.</p>
+        <p>2. 예특보 메뉴에서 <b>단기예보조회, 중기기온조회, 중기육상예보조회</b>를 각각 활용 신청하세요.</p>
+    </div>
+
+    <div class="card">
+        <h2><span class="step-num">3</span> GitHub Secrets 설정</h2>
+        <p>내 저장소 <b>Settings → Secrets and variables → Actions</b>에서 <code>KMA_API_KEY</code>라는 이름으로 인증키를 저장합니다.</p>
+    </div>
+
+    <div class="card">
+        <h2><span class="step-num">4</span> 내 동네 설정값 찾기</h2>
+        <p>주소를 입력하면 240개 기상청 구역 데이터를 바탕으로 정확한 코드를 찾아드립니다.</p>
         <input type="text" id="address" placeholder="예: 서울특별시 중랑구 신내동 또는 제주 이호일동">
         <button class="btn-calc" onclick="findCoords()">좌표 및 구역코드 계산</button>
         
         <div id="result">
-            <p>👇 <b>다음 단계(update_calendar.py)에서 입력할 값들입니다:</b></p>
+            <p>👇 <b>다음 단계에서 입력할 값들입니다:</b></p>
             <ul>
-                <li><b>NX:</b> <code id="res_nx">-</code> / <b>NY:</b> <code id="res_ny">-</code></li>
-                <li><b>REG_ID_LAND (육상):</b> <code id="res_land">-</code></li>
-                <li><b>REG_ID_TEMP (기온):</b> <code id="res_temp">-</code></li>
+                <li>NX: <code id="res_nx">-</code> / NY: <code id="res_ny">-</code></li>
+                <li>REG_ID_LAND: <code id="res_land">-</code></li>
+                <li>REG_ID_TEMP: <code id="res_temp">-</code></li>
             </ul>
-            <p style="font-size: 0.85em; color: #64748b; margin-top: 10px;">* 중기 예보 코드는 입력하신 주소와 가장 가까운 거점 지점으로 자동 매칭되었습니다.</p>
         </div>
     </div>
 
+    <div class="card">
+        <h2><span class="step-num">5</span> 정보 업데이트 및 실행</h2>
+        <p>1. <code>update_calendar.py</code> 파일을 열고 위에서 찾은 값으로 수정 후 <b>Commit</b> 하세요.</p>
+        <div class="wait-box">
+            <strong>⏳ 자동 생성 대기</strong><br>
+            Actions 탭에서 작업이 완료(초록 체크)될 때까지 약 1분간 기다려주세요.
+        </div>
+    </div>
+
+    <div class="card" style="border-top: 6px solid var(--success);">
+        <h2><span class="step-num">6</span> 캘린더 구독하기</h2>
+        <p>생성된 <code>weather.ics</code> 파일의 <b>Raw</b> 주소를 복사하여 휴대폰 달력 앱에 등록하세요.</p>
+        <img src="./calendar.png" alt="구독 예시" class="example-img">
+    </div>
+
     <script>
-        // 기상청 격자 변환 상수 및 함수
         const RE = 6371.00877; const GRID = 5.0; const SLAT1 = 30.0; const SLAT2 = 60.0;
         const OLON = 126.0; const OLAT = 38.0; const XO = 43; const YO = 136;
 
@@ -67,57 +98,35 @@
         async function findCoords() {
             const addrInput = document.getElementById('address').value;
             if (!addrInput) return alert("주소를 입력해주세요!");
-
             try {
-                // 1. 위경도 검색 (OpenStreetMap API)
                 const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addrInput)}`);
                 const geoData = await geoRes.json();
-                if (geoData.length === 0) return alert("주소를 찾을 수 없습니다. 상세 주소를 입력해주세요.");
-                
-                const lat = parseFloat(geoData[0].lat);
-                const lon = parseFloat(geoData[0].lon);
-                const grid = getGrid(lat, lon);
+                if (geoData.length === 0) return alert("주소를 찾을 수 없습니다.");
+                const grid = getGrid(parseFloat(geoData[0].lat), parseFloat(geoData[0].lon));
 
-                // 2. 240개 지역 코드 데이터 로드 (외부 파일)
                 const codeRes = await fetch('./region_codes.json');
                 const codeData = await codeRes.json();
 
-                // 3. 지능형 매칭 (A타입 육상과 C타입 기온 분리 매칭)
-                let matchedLand = "11B00000"; // 기본값 (서울.인천.경기)
-                let matchedTemp = "11B10101"; // 기본값 (서울)
+                let matchedLand = "11B00000"; 
+                let matchedTemp = "11B10101"; 
                 
-                // 육상(A) 매칭: 주소에 포함된 광역 키워드 찾기
                 for (const item of codeData) {
-                    if (item.type === 'A') {
-                        // "서울.인천.경기" 같은 경우 마침표로 나누어 대조
-                        const names = item.name.split('.');
-                        if (names.some(n => addrInput.includes(n.trim())) || addrInput.includes(item.name)) {
-                            matchedLand = item.id;
-                        }
+                    if (item.type === 'A' && (item.name.split('.').some(n => addrInput.includes(n.trim())) || addrInput.includes(item.name))) {
+                        matchedLand = item.id;
                     }
                 }
-                
-                // 기온(C) 매칭: 가장 긴 일치 단어 기준 (정확도 향상)
                 let bestScore = 0;
                 for (const item of codeData) {
                     if (item.type === 'C' && addrInput.includes(item.name)) {
-                        if (item.name.length > bestScore) {
-                            matchedTemp = item.id;
-                            bestScore = item.name.length;
-                        }
+                        if (item.name.length > bestScore) { matchedTemp = item.id; bestScore = item.name.length; }
                     }
                 }
-
-                // 4. 결과 출력
                 document.getElementById('res_nx').innerText = grid.x;
                 document.getElementById('res_ny').innerText = grid.y;
                 document.getElementById('res_land').innerText = matchedLand;
                 document.getElementById('res_temp').innerText = matchedTemp;
                 document.getElementById('result').style.display = 'block';
-
-            } catch (e) {
-                alert("데이터 로드 오류! region_codes.json 파일이 저장소에 있는지 확인해주세요.");
-            }
+            } catch (e) { alert("오류 발생! region_codes.json 파일이 필요합니다."); }
         }
     </script>
 </body>
