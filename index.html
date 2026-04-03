@@ -18,12 +18,13 @@
         .info-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 10px; margin-top: 20px; font-size: 0.95em; }
         .highlight { color: var(--accent); font-weight: bold; }
         code { background: #fee2e2; padding: 3px 6px; border-radius: 4px; color: #991b1b; font-family: monospace; font-weight: bold; }
+        .secrets-list { background: #f1f5f9; padding: 15px; border-radius: 10px; list-style: none; margin: 15px 0; }
+        .secrets-list li { margin-bottom: 8px; font-family: monospace; font-size: 0.9em; }
         
         select, input { width: 100%; padding: 15px; margin: 10px 0; border: 2px solid #bfdbfe; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
         .btn-calc { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.2s; }
         .btn-calc:hover { background: #1d4ed8; }
         div#result { display:none; margin-top: 25px; padding: 25px; background: #eff6ff; border-radius: 12px; border: 1px solid #bfdbfe; }
-        .example-img { width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -42,24 +43,15 @@
         <p>2. 메뉴에서 <b>단기예보, 중기기온, 중기육상예보</b>를 각각 활용 신청하세요.</p>
     </div>
 
-    <div class="card">
-        <h2><span class="step-num">3</span> GitHub Secrets 설정</h2>
-        <p>내 저장소 <b>Settings → Secrets → Actions</b>에서 <code>KMA_API_KEY</code> 이름으로 인증키를 저장합니다.</p>
-    </div>
-
-    <div class="card" id="step4">
-        <h2><span class="step-num">4</span> 내 동네 설정값 찾기</h2>
+    <div class="card" id="step3">
+        <h2><span class="step-num">3</span> 내 동네 설정값 찾기</h2>
         <p><b>① 가까운 예보 지점을 선택하세요:</b></p>
-        <select id="regionSelect">
-            <option value="">데이터 로딩 중...</option>
-        </select>
-        
+        <select id="regionSelect"><option value="">데이터 로딩 중...</option></select>
         <p><b>② 상세 주소(도로명)를 입력하세요:</b></p>
         <input type="text" id="address" placeholder="예: 뚝섬로 599 또는 봉화산로 193">
         <button class="btn-calc" onclick="calculateAll()">설정값 계산하기</button>
-        
         <div id="result">
-            <p>✅ <b>update_calendar.py에 복사할 값:</b></p>
+            <p>✅ <b>다음 단계(Secrets)에서 입력할 값입니다:</b></p>
             <ul>
                 <li>NX: <code id="res_nx">-</code> / NY: <code id="res_ny">-</code></li>
                 <li>REG_ID_LAND: <code id="res_land">-</code></li>
@@ -69,35 +61,40 @@
     </div>
 
     <div class="card">
-        <h2><span class="step-num">5</span> 정보 업데이트 및 권한 승인</h2>
-        <p>1. 내 저장소의 <code>update_calendar.py</code> 파일을 열고 위에서 찾은 값으로 수정한 뒤 <b>Commit</b> 하세요.</p>
-        
-        <div class="alert-box">
-            <strong>⚠️ 중요: 자동 업데이트 활성화</strong><br>
-            GitHub 정책상 Fork된 저장소는 자동 실행 기능이 꺼져 있습니다.<br>
-            상단 <b>[Actions]</b> 탭 클릭 후 <b>"I understand my workflows, go ahead and enable them"</b> 초록색 버튼을 반드시 눌러주세요!
-        </div>
+        <h2><span class="step-num">4</span> GitHub Secrets 설정</h2>
+        <p>내 저장소 <b>Settings → Secrets and variables → Actions</b>에서 아래 항목들을 각각 <b>New repository secret</b>으로 추가합니다.</p>
+        <ul class="secrets-list">
+            <li>• <code>KMA_API_KEY</code> : 기상청 인증키</li>
+            <li>• <code>KMA_NX</code> : 위에서 찾은 NX 값</li>
+            <li>• <code>KMA_NY</code> : 위에서 찾은 NY 값</li>
+            <li>• <code>REG_ID_LAND</code> : 위에서 찾은 LAND 값</li>
+            <li>• <code>REG_ID_TEMP</code> : 위에서 찾은 TEMP 값</li>
+            <li>• <code>LOCATION_NAME</code> : 내 동네 이름 (예: 우리집)</li>
+        </ul>
+    </div>
 
+    <div class="card">
+        <h2><span class="step-num">5</span> 자동 업데이트 활성화</h2>
+        <div class="alert-box">
+            <strong>⚠️ 중요: 워크플로우 활성화</strong><br>
+            GitHub 정책상 Fork된 저장소는 자동 실행이 꺼져 있습니다.<br>
+            상단 <b>[Actions]</b> 탭 클릭 후 <b>"I understand 제 버튼"</b>을 눌러 활성화하세요.
+        </div>
         <div class="wait-box">
-            <strong>⏳ 자동 빌드 대기</strong><br>
-            버튼 클릭 후 Actions 탭에서 초록색 체크가 뜰 때까지 약 1분간 기다려주세요.
+            <strong>⏳ 첫 실행 방법</strong><br>
+            Actions 탭에서 <code>Weather Calendar Update</code> 선택 후 <b>Run workflow</b>를 클릭하면 즉시 캘린더 파일이 생성됩니다.
         </div>
     </div>
 
     <div class="card" style="border-top: 6px solid var(--success);">
-        <h2><span class="step-num">6</span> 캘린더 구독하기</h2>
+        <h2><span class="step-num">6</span> 캘린더 구독</h2>
         <p>생성된 <code>weather.ics</code> 파일의 <b>Raw</b> 주소를 복사하여 휴대폰 달력 앱에 등록하세요.</p>
-        
         <div class="info-box">
-            <b>⏰ 업데이트 주기 안내</b>
+            <b>⏰ 업데이트 주기</b>
             <ul style="margin-top: 10px; padding-left: 20px;">
-                <li><b>단기 예보 (오늘~3일):</b> 매 3시간마다 최신 정보로 자동 갱신됩니다.</li>
-                <li><b>중기 예보 (4일~10일):</b> 하루 2번(06시, 18시) 최신 정보로 자동 갱신됩니다.</li>
+                <li>단기(오늘~3일): 매 3시간 / 중기(4~10일): 1일 2회(06시, 18시)</li>
             </ul>
-            <p style="margin-top: 10px; font-size: 0.9em; color: #64748b;">※ 실제 달력 앱에 반영되는 속도는 구독 서비스의 갱신 주기 설정에 따라 다를 수 있습니다.</p>
         </div>
-
-        <img src="./calendar.png" alt="구독 예시" class="example-img">
     </div>
 
     <script>
@@ -109,19 +106,14 @@
                 select.innerHTML = '<option value="">-- 가까운 지점 선택 --</option>';
                 data.sort((a, b) => a.name.localeCompare(b.name)).forEach(item => {
                     const opt = document.createElement('option');
-                    opt.value = item.id; 
-                    opt.text = item.name;
-                    select.appendChild(opt);
+                    opt.value = item.id; opt.text = item.name; select.appendChild(opt);
                 });
-            } catch (e) {
-                document.getElementById('regionSelect').innerHTML = '<option>데이터 로드 실패</option>';
-            }
+            } catch (e) { document.getElementById('regionSelect').innerHTML = '<option>데이터 로드 실패</option>'; }
         }
         loadRegions();
 
         const RE = 6371.00877; const GRID = 5.0; const SLAT1 = 30.0; const SLAT2 = 60.0;
         const OLON = 126.0; const OLAT = 38.0; const XO = 43; const YO = 136;
-
         function getGrid(lat, lon) {
             const DEGRAD = Math.PI / 180.0;
             const re = RE / GRID; const slat1 = SLAT1 * DEGRAD; const slat2 = SLAT2 * DEGRAD;
@@ -155,30 +147,20 @@
             const tempId = document.getElementById('regionSelect').value;
             const address = document.getElementById('address').value;
             const resultDiv = document.getElementById('result');
-
-            if (!tempId || !address) return alert("지점 선택과 주소 입력을 모두 완료해 주세요!");
-
+            if (!tempId || !address) return alert("지점과 주소를 모두 입력해 주세요!");
             try {
                 const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
                 const data = await res.json();
                 if (data.length === 0) return alert("주소를 찾을 수 없습니다.");
-
-                const lat = parseFloat(data[0].lat);
-                const lon = parseFloat(data[0].lon);
-                const grid = getGrid(lat, lon);
+                const grid = getGrid(parseFloat(data[0].lat), parseFloat(data[0].lon));
                 const landId = getLandCode(tempId);
-
                 document.getElementById('res_nx').innerText = grid.x;
                 document.getElementById('res_ny').innerText = grid.y;
                 document.getElementById('res_temp').innerText = tempId;
                 document.getElementById('res_land').innerText = landId;
-                
                 resultDiv.style.display = 'block';
                 resultDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-            } catch (e) {
-                alert("처리 중 오류가 발생했습니다.");
-            }
+            } catch (e) { alert("오류가 발생했습니다."); }
         }
     </script>
 </body>
