@@ -6,28 +6,36 @@
     <title>기상청 10일 날씨 달력 제작 풀 가이드</title>
     <style>
         :root { --primary: #2563eb; --accent: #f97316; --success: #059669; --bg: #f8fafc; }
-        body { font-family: 'Pretendard', sans-serif; line-height: 1.6; color: #334155; max-width: 850px; margin: 0 auto; padding: 20px; background: var(--bg); scroll-behavior: smooth; }
+        body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #334155; max-width: 850px; margin: 0 auto; padding: 20px; background: var(--bg); scroll-behavior: smooth; }
         .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 6px solid var(--primary); }
         .repo-link { background: #e0e7ff; padding: 10px 15px; border-radius: 8px; font-weight: bold; color: #3730a3; display: inline-block; margin-bottom: 20px; text-decoration: none; }
         h1 { text-align: center; color: #1e293b; margin-bottom: 10px; font-size: 2em; }
         .subtitle { text-align: center; color: #64748b; margin-bottom: 40px; }
         h2 { color: var(--primary); margin-top: 0; display: flex; align-items: center; font-size: 1.5em; }
         .step-num { background: var(--primary); color: white; width: 32px; height: 32px; text-align: center; border-radius: 50%; font-size: 18px; margin-right: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: bold; }
-        .wait-box { background: #fff7ed; border: 1px solid #fed7aa; padding: 20px; border-radius: 10px; margin-top: 15px; color: #9a3412; }
-        .alert-box { background: #fee2e2; border: 1px solid #fecaca; padding: 20px; border-radius: 10px; margin-top: 15px; color: #991b1b; }
-        .info-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 10px; margin-top: 20px; font-size: 0.95em; }
-        .highlight { color: var(--accent); font-weight: bold; }
-        code { background: #fee2e2; padding: 3px 6px; border-radius: 4px; color: #991b1b; font-family: monospace; font-weight: bold; }
-        .secrets-list { background: #f1f5f9; padding: 15px; border-radius: 10px; list-style: none; margin: 15px 0; }
-        .secrets-list li { margin-bottom: 8px; font-family: monospace; font-size: 0.9em; }
+        
+        /* 입력 도구 및 버튼 */
         select, input { width: 100%; padding: 15px; margin: 10px 0; border: 2px solid #bfdbfe; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
         .btn-calc { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.2s; }
+        .btn-calc:hover { background: #1d4ed8; }
+        
+        /* 결과창 및 안내 박스 */
         div#result { display:none; margin-top: 25px; padding: 25px; background: #eff6ff; border-radius: 12px; border: 1px solid #bfdbfe; }
+        .alert-box { background: #fee2e2; border: 1px solid #fecaca; padding: 20px; border-radius: 10px; margin-top: 15px; color: #991b1b; }
+        .wait-box { background: #fff7ed; border: 1px solid #fed7aa; padding: 20px; border-radius: 10px; margin-top: 15px; color: #9a3412; }
+        .info-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 10px; margin-top: 20px; font-size: 0.95em; }
+        .secrets-list { background: #f1f5f9; padding: 15px; border-radius: 10px; list-style: none; margin: 15px 0; }
+        .secrets-list li { margin-bottom: 8px; font-family: monospace; font-size: 0.9em; }
+        
+        /* 이미지 모달 스타일 */
         .example-img { width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 20px; cursor: zoom-in; }
-
-        /* 모달 스타일 */
-        #imageModal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; cursor: zoom-out; }
-        #modalImg { max-width: 90%; max-height: 90%; border-radius: 10px; }
+        #imageModal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
+        #modalImg { max-width: 90%; max-height: 85%; border-radius: 10px; box-shadow: 0 0 30px rgba(255,255,255,0.2); }
+        .close-btn { position: absolute; top: 30px; right: 40px; color: white; font-size: 50px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .close-btn:hover { color: #bbb; }
+        
+        code { background: #fee2e2; padding: 3px 6px; border-radius: 4px; color: #991b1b; font-family: monospace; font-weight: bold; }
+        .highlight { color: var(--accent); font-weight: bold; }
     </style>
 </head>
 <body>
@@ -37,58 +45,81 @@
 
     <div class="card">
         <h2><span class="step-num">1</span> 프로젝트 포크 (Fork)</h2>
-        <p>상단 <b class="highlight">원본 저장소</b> 접속 후 오른쪽 상단의 <b>[Fork]</b> 버튼을 눌러 가져옵니다.</p>
+        <p>상단 <b class="highlight">원본 저장소</b> 링크 접속 후 오른쪽 상단의 <b>[Fork]</b> 버튼을 눌러 내 계정으로 가져옵니다.</p>
         <hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 20px 0;">
         <div style="background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0;">
             <h3 style="margin-top: 0; font-size: 1.1em; color: #475569;">🔄 기존 포크 사용자 업데이트 방법</h3>
             <p style="font-size: 0.9em; margin-bottom: 0;">
-                이미 포크하신 분들은 <b>[Sync fork]</b> → <b>[Update branch]</b>를 눌러 최신 코드를 반영하세요. 
+                이미 포크하신 분들은 본인 저장소 메인에서 <b>[Sync fork]</b> → <b>[Update branch]</b>를 누르세요. 
+                최신 코드가 반영되어 <b>Secrets 설정</b>만으로 관리할 수 있게 됩니다.
             </p>
         </div>
     </div>
 
     <div class="card">
         <h2><span class="step-num">2</span> 기상청 API 인증키 발급</h2>
-        <p>1. <a href="https://apihub.kma.go.kr/" target="_blank">기상청 API 허브</a> 인증키 복사.<br>2. 단기예보, 중기기온, 중기육상예보 활용 신청.</p>
+        <p>1. <a href="https://apihub.kma.go.kr/" target="_blank">기상청 API 허브</a> 회원가입 후 <b>[인증키 현황]</b>에서 키를 복사합니다.</p>
+        <p>2. 메뉴에서 <b>단기예보, 중기기온, 중기육상예보</b>를 각각 활용 신청하세요.</p>
     </div>
 
     <div class="card" id="step3">
         <h2><span class="step-num">3</span> 내 동네 설정값 찾기</h2>
+        <p><b>① 가까운 예보 지점을 선택하세요:</b></p>
         <select id="regionSelect"><option value="">데이터 로딩 중...</option></select>
+        <p><b>② 상세 주소(도로명)를 입력하세요:</b></p>
         <input type="text" id="address" placeholder="예: 뚝섬로 599 또는 봉화산로 193">
         <button class="btn-calc" onclick="calculateAll()">설정값 계산하기</button>
         <div id="result">
-            <p>✅ <b>다음 단계(Secrets)에서 입력할 값:</b></p>
+            <p>✅ <b>다음 단계(Secrets)에서 입력할 값입니다:</b></p>
             <ul>
                 <li>NX: <code id="res_nx">-</code> / NY: <code id="res_ny">-</code></li>
-                <li>REG_ID_LAND: <code id="res_land">-</code> / REG_ID_TEMP: <code id="res_temp">-</code></li>
+                <li>REG_ID_LAND: <code id="res_land">-</code></li>
+                <li>REG_ID_TEMP: <code id="res_temp">-</code></li>
             </ul>
         </div>
     </div>
 
     <div class="card">
         <h2><span class="step-num">4</span> GitHub Secrets 설정</h2>
-        <p><b>Settings → Secrets and variables → Actions</b>에서 아래 항목 추가:</p>
+        <p>내 저장소 <b>Settings → Secrets and variables → Actions</b>에서 아래 항목들을 각각 <b>New repository secret</b>으로 추가합니다.</p>
         <ul class="secrets-list">
-            <li>• <code>KMA_API_KEY</code>, <code>KMA_NX</code>, <code>KMA_NY</code></li>
-            <li>• <code>REG_ID_LAND</code>, <code>REG_ID_TEMP</code>, <code>LOCATION_NAME</code></li>
+            <li>• <code>KMA_API_KEY</code> : 기상청 인증키</li>
+            <li>• <code>KMA_NX</code>, <code>KMA_NY</code> : 위에서 찾은 좌표</li>
+            <li>• <code>REG_ID_LAND</code>, <code>REG_ID_TEMP</code> : 위에서 찾은 구역 코드</li>
+            <li>• <code>LOCATION_NAME</code> : 내 동네 이름 (예: 우리집)</li>
         </ul>
     </div>
 
     <div class="card">
         <h2><span class="step-num">5</span> 자동 업데이트 활성화</h2>
         <div class="alert-box">
-            상단 <b>[Actions]</b> 탭 클릭 후 초록색 버튼 <b>"I understand my workflows..."</b>를 눌러 활성화하세요.
+            <strong>⚠️ 중요: GitHub Actions 활성화 (최초 1회)</strong><br>
+            상단 <b>[Actions]</b> 탭 클릭 후 나타나는 초록색 버튼<br>
+            <b>"I understand my workflows, go ahead and enable them"</b>을 반드시 눌러주세요!
+        </div>
+        <div class="wait-box">
+            <strong>⏳ 첫 실행 확인하기</strong><br>
+            활성화 후 <b>Weather Calendar Update</b> 워크플로우를 선택하고, <b>Run workflow</b>를 눌러 수동으로 한 번 실행해 보세요.
         </div>
     </div>
 
     <div class="card" style="border-top: 6px solid var(--success);">
-        <h2><span class="step-num">6</span> 캘린더 구독</h2>
-        <p><code>weather.ics</code> 파일의 <b>Raw</b> 주소를 달력 앱에 등록하세요.</p>
+        <h2><span class="step-num">6</span> 캘린더 구독하기</h2>
+        <p>생성된 <code>weather.ics</code> 파일의 <b>Raw</b> 주소를 복사하여 휴대폰 달력 앱에 등록하세요.</p>
+        <div class="info-box">
+            <b>⏰ 업데이트 주기 안내</b>
+            <ul style="margin-top: 10px; padding-left: 20px;">
+                <li><b>단기 예보 (오늘~3일):</b> 매 3시간마다 자동 갱신됩니다.</li>
+                <li><b>중기 예보 (4일~10일):</b> 하루 2번(06시, 18시) 자동 갱신됩니다.</li>
+            </ul>
+        </div>
         <img src="./calendar.png" alt="구독 예시" class="example-img" onclick="openModal(this.src)">
     </div>
 
-    <div id="imageModal" onclick="closeModal()"><img id="modalImg"></div>
+    <div id="imageModal">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <img id="modalImg">
+    </div>
 
     <script>
         async function loadRegions() {
@@ -101,7 +132,7 @@
                     const opt = document.createElement('option');
                     opt.value = item.id; opt.text = item.name; select.appendChild(opt);
                 });
-            } catch (e) { console.error(e); }
+            } catch (e) { document.getElementById('regionSelect').innerHTML = '<option>데이터 로드 실패</option>'; }
         }
         loadRegions();
 
@@ -122,27 +153,51 @@
             return { x: Math.floor(ra * Math.sin(theta) + XO + 0.5), y: Math.floor(ro - ra * Math.cos(theta) + YO + 0.5) };
         }
 
+        function getLandCode(tempId) {
+            if (tempId.startsWith("11B")) return "11B00000";
+            if (tempId.startsWith("11D1")) return "11D10000";
+            if (tempId.startsWith("11D2")) return "11D20000";
+            if (tempId.startsWith("11C1")) return "11C10000";
+            if (tempId.startsWith("11C2")) return "11C20000";
+            if (tempId.startsWith("11F1") || tempId.startsWith("21F1")) return "11F10000";
+            if (tempId.startsWith("11F2") || tempId.startsWith("21F2")) return "11F20000";
+            if (tempId.startsWith("11H1")) return "11H10000";
+            if (tempId.startsWith("11H2")) return "11H20000";
+            if (tempId.startsWith("11G")) return "11G00000";
+            return "11B00000";
+        }
+
         async function calculateAll() {
             const tempId = document.getElementById('regionSelect').value;
             const address = document.getElementById('address').value;
-            if (!tempId || !address) return alert("입력 확인!");
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
-            const data = await res.json();
-            if (data.length === 0) return alert("주소 없음");
-            const grid = getGrid(parseFloat(data[0].lat), parseFloat(data[0].lon));
-            document.getElementById('res_nx').innerText = grid.x;
-            document.getElementById('res_ny').innerText = grid.y;
-            document.getElementById('res_temp').innerText = tempId;
-            document.getElementById('res_land').innerText = tempId.startsWith("11G") ? "11G00000" : "11B00000"; // 간략화
-            document.getElementById('result').style.display = 'block';
-            document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const resultDiv = document.getElementById('result');
+            if (!tempId || !address) return alert("지점과 주소를 모두 입력해 주세요!");
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+                const data = await res.json();
+                if (data.length === 0) return alert("주소를 찾을 수 없습니다.");
+                const grid = getGrid(parseFloat(data[0].lat), parseFloat(data[0].lon));
+                document.getElementById('res_nx').innerText = grid.x;
+                document.getElementById('res_ny').innerText = grid.y;
+                document.getElementById('res_temp').innerText = tempId;
+                document.getElementById('res_land').innerText = getLandCode(tempId);
+                resultDiv.style.display = 'block';
+                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } catch (e) { alert("처리 중 오류가 발생했습니다."); }
         }
 
+        // 모달 제어 함수
         function openModal(src) {
             document.getElementById('imageModal').style.display = "flex";
             document.getElementById('modalImg').src = src;
         }
-        function closeModal() { document.getElementById('imageModal').style.display = "none"; }
+        function closeModal() {
+            document.getElementById('imageModal').style.display = "none";
+        }
+        // ESC 키로 모달 닫기
+        window.onkeydown = function(event) {
+            if (event.keyCode == 27) closeModal();
+        };
     </script>
 </body>
 </html>
