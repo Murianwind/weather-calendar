@@ -57,16 +57,18 @@
         <p>2. 좌측 메뉴 <b>[예특보]</b> 항목에서 아래 서비스들을 찾아 각각 <b class="highlight">활용 신청</b>을 완료하세요:</p>
         <div style="background: #f1f5f9; padding: 15px; border-radius: 10px; margin-top: 10px;">
             <ul style="margin: 0; font-size: 0.95em; line-height: 1.8; list-style: none; padding-left: 5px;">
-                <li> <b>단기 예보</b> 〉 4.3 단기예보조회</li>
-                <li> <b>중기 예보</b> 〉 2.2 중기기온조회</li>
-                <li> <b>중기 예보</b> 〉 2.3 중기육상예보조회</li>
+                <li>• <b>단기 예보</b> 〉 4.3 단기예보조회</li>
+                <li>• <b>중기 예보</b> 〉 2.2 중기기온조회</li>
+                <li>• <b>중기 예보</b> 〉 2.3 중기육상예보조회</li>
             </ul>
         </div>
     </div>
 
     <div class="card" id="step3">
         <h2><span class="step-num">3</span> 내 동네 설정값 찾기</h2>
+        <p><b>① 가까운 예보 지점을 선택하세요:</b></p>
         <select id="regionSelect"><option value="">데이터 로딩 중...</option></select>
+        <p><b>② 상세 주소(도로명)를 입력하세요:</b></p>
         <input type="text" id="address" placeholder="예: 뚝섬로 599">
         <button class="btn-calc" onclick="calculateAll()">설정값 계산하기</button>
         <div id="result">
@@ -158,6 +160,23 @@
             return { x: Math.floor(ra * Math.sin(theta) + XO + 0.5), y: Math.floor(ro - ra * Math.cos(theta) + YO + 0.5) };
         }
 
+        function getLandCode(tempId) {
+            if (tempId === "11A00101") return "11A00101"; // 백령도
+            if (tempId.startsWith("11B")) return "11B00000"; // 서울.인천.경기
+            if (tempId.startsWith("11C1")) return "11C10000"; // 충청북도
+            if (tempId.startsWith("11C2")) return "11C20000"; // 충청남도
+            if (tempId === "11E00101") return "11E00101";    // 울릉도
+            if (tempId === "11E00102") return "11E00102";    // 독도
+            if (tempId.startsWith("11G")) return "11G00000"; // 제주도
+            if (tempId.startsWith("11H1")) return "11H10000"; // 경상북도
+            if (tempId.startsWith("11H2")) return "11H20000"; // 경상남도
+            if (tempId.startsWith("11F1")) return "11F10000"; // 전북자치도
+            if (tempId.startsWith("11F2")) return "11F20000"; // 전라남도
+            if (tempId.startsWith("11D1")) return "11D10000"; // 강원영서
+            if (tempId.startsWith("11D2")) return "11D20000"; // 강원영동
+            return "11B00000";
+        }
+
         async function calculateAll() {
             const tempId = document.getElementById('regionSelect').value;
             const address = document.getElementById('address').value;
@@ -170,7 +189,7 @@
                 document.getElementById('res_nx').innerText = grid.x;
                 document.getElementById('res_ny').innerText = grid.y;
                 document.getElementById('res_temp').innerText = tempId;
-                document.getElementById('res_land').innerText = tempId.startsWith("11G") ? "11G00000" : "11B00000";
+                document.getElementById('res_land').innerText = getLandCode(tempId);
                 document.getElementById('result').style.display = 'block';
                 document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'center' });
             } catch (e) { alert("오류 발생!"); }
