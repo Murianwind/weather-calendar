@@ -106,7 +106,7 @@ def main():
                 wind_val = f"🚩{cache['WSD']}m/s"
                 
                 # 3. 최종 한 줄 생성
-                line = f"[{t_str[:2]}시] {emoji} {wf_str} {cache['TMP']}°C ({rain_info} {humidity_val} {wind_val})"
+                line = f"[{t_str[:2]}시] {emoji} {wf_str} {cache['TMP']}°C ({rain_info} {humidity_val} {wind_val} )"
                 desc.append(line)
                 has_future_data = True
         if not has_future_data: continue
