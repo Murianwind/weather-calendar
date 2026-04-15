@@ -40,12 +40,17 @@ def get_mid_emoji(wf):
 def fetch_api(url):
     try:
         res = requests.get(url, timeout=15)
+        print(f"[DEBUG] HTTP {res.status_code} | {url[:100]}")
         if res.status_code == 200:
             data = res.json()
-            if data.get('response', {}).get('header', {}).get('resultCode') == '00':
+            rc = data.get('response', {}).get('header', {}).get('resultCode')
+            rm = data.get('response', {}).get('header', {}).get('resultMsg')
+            print(f"[DEBUG] resultCode={rc}, resultMsg={rm}")
+            if rc == '00':
                 return data
         return None
-    except:
+    except Exception as e:
+        print(f"[DEBUG] fetch 예외: {e} | {url[:100]}")
         return None
 
 def get_base_datetime(now):
@@ -75,10 +80,10 @@ def get_tmfc_candidates(now):
 
     candidates.append(c1)
     candidates.append(c2)
+    print(f"[DEBUG] tmfc_candidates={[c.strftime('%Y%m%d%H%M') for c in candidates]}")
     return candidates
 
 def make_short_ampm_event(d_str, day_data, update_ts, location):
-    """단기예보 데이터로 오전/오후 요약 이벤트 생성 (4~5일차 폴백용)"""
     am_hours = [f"{h:02d}00" for h in range(6, 12)]
     pm_hours = [f"{h:02d}00" for h in range(12, 18)]
 
@@ -132,6 +137,7 @@ def main():
     seoul_tz = pytz.timezone('Asia/Seoul')
     now = datetime.now(seoul_tz)
     update_ts = now.strftime('%Y-%m-%d %H:%M:%S')
+    print(f"[DEBUG] now={now.strftime('%Y-%m-%d %H:%M:%S %Z')}")
 
     cal = Calendar()
     cal.add('X-WR-CALNAME', '기상청 날씨')
@@ -139,6 +145,7 @@ def main():
 
     # --- [2. 단기 예보] ---
     base_date, base_time = get_base_datetime(now)
+    print(f"[DEBUG] 단기 base_date={base_date}, base_time={base_time}")
 
     url_short = (
         f"https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0/getVilageFcst"
@@ -157,13 +164,15 @@ def main():
             if d not in forecast_map: forecast_map[d] = {}
             if t not in forecast_map[d]: forecast_map[d][t] = {}
             forecast_map[d][t][cat] = val
+        print(f"[DEBUG] 단기 forecast_map dates={sorted(forecast_map.keys())}")
+    else:
+        print(f"[DEBUG] 단기 예보 응답 없음 또는 실패")
 
     cache = {'TMP': '15', 'SKY': '1', 'PTY': '0', 'REH': '50', 'WSD': '1.0', 'POP': '0'}
     short_term_limit = (now + timedelta(days=3)).strftime('%Y%m%d')
     day4_str = (now + timedelta(days=4)).strftime('%Y%m%d')
     day5_str = (now + timedelta(days=5)).strftime('%Y%m%d')
 
-    # 1~3일차: 시간별 상세
     for d_str in sorted(forecast_map.keys()):
         if d_str > short_term_limit: continue
         day_data = forecast_map[d_str]
@@ -204,12 +213,15 @@ def main():
         cal.add_component(event)
         processed_dates.add(d_str)
 
+    print(f"[DEBUG] 단기 처리 완료 processed_dates={sorted(processed_dates)}")
+
     # --- [3. 중기 예보] ---
     tmfc_candidates = get_tmfc_candidates(now)
 
     t_res, l_res, tm_fc_dt = None, None, None
     for candidate in tmfc_candidates:
         tm_fc_str = candidate.strftime('%Y%m%d%H%M')
+        print(f"[DEBUG] 중기 후보 시도: {tm_fc_str}")
         url_mid_temp = (
             f"https://apihub.kma.go.kr/api/typ02/openApi/MidFcstInfoService/getMidTa"
             f"?dataType=JSON&regId={REG_ID_TEMP}&tmFc={tm_fc_str}&authKey={API_KEY}"
@@ -220,17 +232,21 @@ def main():
         )
         t_try = fetch_api(url_mid_temp)
         l_try = fetch_api(url_mid_land)
+        print(f"[DEBUG] t_try={t_try is not None}, l_try={l_try is not None}")
         if t_try and l_try:
             t_res, l_res, tm_fc_dt = t_try, l_try, candidate
             break
 
-    print(f"[DEBUG] tm_fc_dt={tm_fc_dt}, processed_dates={sorted(processed_dates)}")
-    
+    print(f"[DEBUG] 최종 tm_fc_dt={tm_fc_dt}")
+
     if t_res and l_res and tm_fc_dt:
         try:
             t_items = t_res['response']['body']['items']['item'][0]
             l_items = l_res['response']['body']['items']['item'][0]
-        except (KeyError, IndexError, TypeError):
+            print(f"[DEBUG] t_items keys={list(t_items.keys())}")
+            print(f"[DEBUG] l_items keys={list(l_items.keys())}")
+        except (KeyError, IndexError, TypeError) as e:
+            print(f"[DEBUG] items 파싱 실패: {e}")
             t_items, l_items = None, None
 
         if t_items and l_items:
@@ -245,11 +261,16 @@ def main():
 
                 t_min = t_items.get(f'taMin{field_i}')
                 t_max = t_items.get(f'taMax{field_i}')
-                if t_min is None or t_max is None: continue
+                if t_min is None or t_max is None:
+                    print(f"[DEBUG] {d_target_str} taMin{field_i}/taMax{field_i} 없음, skip")
+                    continue
 
                 wf_rep = l_items.get(f'wf{field_i}Pm') if field_i <= 7 else l_items.get(f'wf{field_i}')
-                if wf_rep is None: continue
+                if wf_rep is None:
+                    print(f"[DEBUG] {d_target_str} wf{field_i} 없음, skip")
+                    continue
 
+                print(f"[DEBUG] 중기 이벤트 추가: {d_target_str} field_i={field_i}")
                 event = Event()
                 mid_desc = []
                 if field_i <= 7:
@@ -275,13 +296,15 @@ def main():
                 cal.add_component(event)
                 processed_dates.add(d_target_str)
 
-    # --- [4. 4~5일차 폴백: 중기에 없으면 단기 데이터로 오전/오후 요약] ---
+    # --- [4. 4~5일차 폴백] ---
     for d_str in [day4_str, day5_str]:
         if d_str not in processed_dates and d_str in forecast_map:
             event = make_short_ampm_event(d_str, forecast_map[d_str], update_ts, LOCATION_NAME)
             if event:
                 cal.add_component(event)
                 processed_dates.add(d_str)
+
+    print(f"[DEBUG] 최종 processed_dates={sorted(processed_dates)}")
 
     with open('weather.ics', 'wb') as f:
         f.write(cal.to_ical())
