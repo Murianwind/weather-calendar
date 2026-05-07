@@ -1,8 +1,11 @@
 name: Update Weather ICS
 
 on:
-  schedule:
-    - cron: '15 17,20,23,2,5,8,11,14 * * *'
+#  schedule:
+#    - cron: '15 17,20,23,2,5,8,11,14 * * *'
+  repository_dispatch:
+    types: [update-weather-ics]  
+  
   push:
     paths:
       - 'update_calendar.py'
