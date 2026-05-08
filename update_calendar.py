@@ -125,6 +125,7 @@ def main():
 
     # --- [2. 기존 캐시 로드] ---
     cached_events = load_cached_events('weather.ics')
+    print("캐시된 날짜들:", sorted(cached_events.keys()))
 
     # --- [3. 단기 예보: D+0 ~ D+3 시간별 상세] ---
     base_date, base_time = get_base_datetime(now)
@@ -266,6 +267,7 @@ def main():
 
         cur_dt += timedelta(days=1)
 
+    print("최종 processed_dates:", sorted(processed_dates))
     with open('weather.ics', 'wb') as f:
         f.write(cal.to_ical())
 
