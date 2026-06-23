@@ -78,18 +78,6 @@ DESCRIPTION:[00시] ⛅ 구름많음 20°C (💧90% 🚩1.3m/s)\n[01시]
 LOCATION:신내2동
 END:VEVENT
 BEGIN:VEVENT
-SUMMARY:☀️ 22°C/28°C
-DTSTART;VALUE=DATE:20260623
-DTEND;VALUE=DATE:20260624
-UID:20260623@short_summary
-DESCRIPTION:[18시] ☀️ 맑음 28°C (💧40% 🚩3.4m/s)\n[19시] ☀
- ️ 맑음 27°C (💧50% 🚩2.9m/s)\n[20시] ☀️ 맑음 25°C (💧60
- % 🚩2.7m/s)\n[21시] ☀️ 맑음 24°C (💧60% 🚩2.8m/s)\n[22시] 
- ☀️ 맑음 23°C (💧65% 🚩2.7m/s)\n[23시] ☀️ 맑음 22°C (
- 💧70% 🚩2.7m/s)\n\n최종 업데이트: 2026-06-23 17:15:18 (KST)
-LOCATION:신내2동
-END:VEVENT
-BEGIN:VEVENT
 SUMMARY:☀️ 18/30°C
 DTSTART;VALUE=DATE:20260627
 DTEND;VALUE=DATE:20260628
