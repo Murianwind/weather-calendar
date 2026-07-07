@@ -38,14 +38,21 @@ def get_mid_emoji(wf):
     return "☀️"
 
 def fetch_api(url):
+    safe_url = url.split('&authKey=')[0] + '&authKey=***'
     try:
         res = requests.get(url, timeout=15)
-        if res.status_code == 200:
-            data = res.json()
-            if data.get('response', {}).get('header', {}).get('resultCode') == '00':
-                return data
-        return None
-    except:
+        if res.status_code != 200:
+            print(f"[API FAIL] status={res.status_code} url={safe_url} body={res.text[:300]}")
+            return None
+        data = res.json()
+        result_code = data.get('response', {}).get('header', {}).get('resultCode')
+        if result_code != '00':
+            result_msg = data.get('response', {}).get('header', {}).get('resultMsg')
+            print(f"[API FAIL] resultCode={result_code} resultMsg={result_msg} url={safe_url}")
+            return None
+        return data
+    except Exception as e:
+        print(f"[API EXCEPTION] {type(e).__name__}: {e} url={safe_url}")
         return None
 
 def get_base_datetime(now):
@@ -129,6 +136,7 @@ def main():
 
     # --- [3. 단기 예보: D+0 ~ D+3 시간별 상세] ---
     base_date, base_time = get_base_datetime(now)
+    print(f"[단기예보] 요청 base_date={base_date} base_time={base_time} (now={now.strftime('%Y-%m-%d %H:%M:%S')})")
     url_short = (
         f"https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0/getVilageFcst"
         f"?dataType=JSON&base_date={base_date}&base_time={base_time}"
@@ -136,6 +144,8 @@ def main():
     )
     forecast_map = {}
     short_res = fetch_api(url_short)
+    if short_res is None:
+        print(f"[단기예보] API 실패 (base_date={base_date}, base_time={base_time}) -> 캐시 재사용 예정")
     if short_res and 'body' in short_res['response']:
         for it in short_res['response']['body']['items']['item']:
             d, t, cat, val = it['fcstDate'], it['fcstTime'], it['category'], it['fcstValue']
@@ -213,13 +223,16 @@ def main():
             t_res, l_res, tm_fc_dt = t_try, l_try, candidate
             break
 
+    if tm_fc_dt is None:
+        print(f"[중기예보] 후보 tmFc {[c.strftime('%Y%m%d%H%M') for c in tmfc_candidates]} 전부 실패 -> 캐시 재사용 예정")
+
     t_items, l_items = None, None
     if t_res and l_res and tm_fc_dt:
         try:
             t_items = t_res['response']['body']['items']['item'][0]
             l_items = l_res['response']['body']['items']['item'][0]
-        except (KeyError, IndexError, TypeError):
-            pass
+        except (KeyError, IndexError, TypeError) as e:
+            print(f"[중기예보] 파싱 실패: {type(e).__name__}: {e}")
 
     # D+4 ~ D+10 순서대로 채우기
     cur_dt = mid_start_dt
