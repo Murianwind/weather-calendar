@@ -1,4 +1,5 @@
 import os
+import time
 import requests
 import pytz
 from datetime import datetime, timedelta
@@ -37,23 +38,28 @@ def get_mid_emoji(wf):
     if '맑음' in wf: return "☀️"
     return "☀️"
 
-def fetch_api(url):
+def fetch_api(url, retries=3, timeout=25, backoff_sec=8):
     safe_url = url.split('&authKey=')[0] + '&authKey=***'
-    try:
-        res = requests.get(url, timeout=15)
-        if res.status_code != 200:
-            print(f"[API FAIL] status={res.status_code} url={safe_url} body={res.text[:300]}")
-            return None
-        data = res.json()
-        result_code = data.get('response', {}).get('header', {}).get('resultCode')
-        if result_code != '00':
-            result_msg = data.get('response', {}).get('header', {}).get('resultMsg')
-            print(f"[API FAIL] resultCode={result_code} resultMsg={result_msg} url={safe_url}")
-            return None
-        return data
-    except Exception as e:
-        print(f"[API EXCEPTION] {type(e).__name__}: {e} url={safe_url}")
-        return None
+    for attempt in range(1, retries + 1):
+        try:
+            res = requests.get(url, timeout=timeout)
+            if res.status_code != 200:
+                print(f"[API FAIL] attempt={attempt}/{retries} status={res.status_code} url={safe_url} body={res.text[:300]}")
+            else:
+                data = res.json()
+                result_code = data.get('response', {}).get('header', {}).get('resultCode')
+                if result_code == '00':
+                    return data
+                result_msg = data.get('response', {}).get('header', {}).get('resultMsg')
+                print(f"[API FAIL] attempt={attempt}/{retries} resultCode={result_code} resultMsg={result_msg} url={safe_url}")
+        except Exception as e:
+            print(f"[API EXCEPTION] attempt={attempt}/{retries} {type(e).__name__}: {e} url={safe_url}")
+
+        if attempt < retries:
+            time.sleep(backoff_sec)
+
+    print(f"[API GIVEUP] {retries}회 재시도 모두 실패 url={safe_url}")
+    return None
 
 def get_base_datetime(now):
     release_hours = [2, 5, 8, 11, 14, 17, 20, 23]
