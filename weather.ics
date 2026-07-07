@@ -2,6 +2,23 @@ BEGIN:VCALENDAR
 X-WR-CALNAME:기상청 날씨
 X-WR-TIMEZONE:Asia/Seoul
 BEGIN:VEVENT
+SUMMARY:☁️ 27°C/31°C
+DTSTART;VALUE=DATE:20260707
+DTEND;VALUE=DATE:20260708
+UID:20260707@short_summary
+DESCRIPTION:[12시] ☁️ 흐림 27°C (💧80% 🚩1.9m/s)\n[13시] ☔ 
+ 소나기 28°C (☔60% 💧80% 🚩1.3m/s)\n[14시] ☔ 소나기 30°C (
+ ☔60% 💧75% 🚩1.7m/s)\n[15시] ☔ 소나기 31°C (☔60% 💧70% 
+ 🚩1.5m/s)\n[16시] ☔ 소나기 30°C (☔60% 💧70% 🚩1.5m/s)\n[17
+ 시] ☁️ 흐림 30°C (💧70% 🚩1.4m/s)\n[18시] ☁️ 흐림 29°C
+  (💧70% 🚩2m/s)\n[19시] ☁️ 흐림 29°C (💧75% 🚩2.1m/s)\n[20
+ 시] ☁️ 흐림 28°C (💧80% 🚩2.2m/s)\n[21시] ☁️ 흐림 27°C
+  (💧80% 🚩2.2m/s)\n[22시] ☁️ 흐림 27°C (💧80% 🚩2.3m/s)\n[
+ 23시] ☁️ 흐림 27°C (💧80% 🚩2.1m/s)\n\n최종 업데이트: 20
+ 26-07-07 11:15:20 (KST)
+LOCATION:신내2동
+END:VEVENT
+BEGIN:VEVENT
 SUMMARY:🌧️ 24°C/27°C
 DTSTART;VALUE=DATE:20260708
 DTEND;VALUE=DATE:20260709
@@ -76,23 +93,6 @@ DESCRIPTION:[00시] ☁️ 흐림 23°C (💧90% 🚩1.4m/s)\n[01시] 🌧
  음 26°C (💧85% 🚩0.8m/s)\n[22시] ☁️ 흐림 26°C (💧90% 🚩0
  .5m/s)\n[23시] ☁️ 흐림 25°C (💧90% 🚩0.4m/s)\n\n최종 업데
  이트: 2026-07-07 23:15:25 (KST)
-LOCATION:신내2동
-END:VEVENT
-BEGIN:VEVENT
-SUMMARY:☁️ 27°C/31°C
-DTSTART;VALUE=DATE:20260707
-DTEND;VALUE=DATE:20260708
-UID:20260707@short_summary
-DESCRIPTION:[12시] ☁️ 흐림 27°C (💧80% 🚩1.9m/s)\n[13시] ☔ 
- 소나기 28°C (☔60% 💧80% 🚩1.3m/s)\n[14시] ☔ 소나기 30°C (
- ☔60% 💧75% 🚩1.7m/s)\n[15시] ☔ 소나기 31°C (☔60% 💧70% 
- 🚩1.5m/s)\n[16시] ☔ 소나기 30°C (☔60% 💧70% 🚩1.5m/s)\n[17
- 시] ☁️ 흐림 30°C (💧70% 🚩1.4m/s)\n[18시] ☁️ 흐림 29°C
-  (💧70% 🚩2m/s)\n[19시] ☁️ 흐림 29°C (💧75% 🚩2.1m/s)\n[20
- 시] ☁️ 흐림 28°C (💧80% 🚩2.2m/s)\n[21시] ☁️ 흐림 27°C
-  (💧80% 🚩2.2m/s)\n[22시] ☁️ 흐림 27°C (💧80% 🚩2.3m/s)\n[
- 23시] ☁️ 흐림 27°C (💧80% 🚩2.1m/s)\n\n최종 업데이트: 20
- 26-07-07 11:15:20 (KST)
 LOCATION:신내2동
 END:VEVENT
 BEGIN:VEVENT
