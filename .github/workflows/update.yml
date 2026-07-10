@@ -4,8 +4,8 @@ on:
 #  schedule:
 #    - cron: '15 17,20,23,2,5,8,11,14 * * *'
   repository_dispatch:
-    types: [update-weather-ics]  
-  
+    types: [update-weather-ics]
+
   push:
     paths:
       - 'update_calendar.py'
@@ -19,9 +19,15 @@ permissions:
   id-token: write
 
 jobs:
-  build:
+  # 여러 러너에서 동시에 시도합니다. 러너마다 다른 IP를 배정받기 때문에,
+  # 특정 IP 대역이 KMA API허브 쪽에서 막혀있어도 병렬 시도 중 하나는
+  # 안 막힌 IP를 받을 확률이 올라갑니다. (같은 authKey, 추가 인프라 불필요)
+  fetch:
     runs-on: ubuntu-latest
-    # 🌟 여기에 위치시켜 보겠습니다.
+    strategy:
+      fail-fast: false
+      matrix:
+        attempt: [1, 2, 3, 4, 5]
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
@@ -39,14 +45,14 @@ jobs:
       - name: Log runner IP
         continue-on-error: true
         run: |
-          echo "Runner outbound IP:"
+          echo "[attempt ${{ matrix.attempt }}] Runner outbound IP:"
           curl -s --max-time 10 ifconfig.me || echo "(IP 조회 실패)"
           echo ""
 
       - name: Run update script
         id: run_script
         continue-on-error: true
-        timeout-minutes: 10
+        timeout-minutes: 3
         env:
           KMA_API_KEY: ${{ secrets.KMA_API_KEY }}
           KMA_NX: ${{ secrets.KMA_NX }}
@@ -57,8 +63,48 @@ jobs:
           TZ: Asia/Seoul
         run: python -u update_calendar.py
 
+      # API를 실제로 받아온(캐시 폴백이 아닌) 시도만 artifact로 올립니다.
+      - name: Upload result (only if API succeeded)
+        if: steps.run_script.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: weather-ics-attempt-${{ matrix.attempt }}
+          path: weather.ics
+          retention-days: 1
+
+  # fetch의 병렬 시도 중 성공한 게 하나라도 있으면 그걸로 커밋하고,
+  # 셋 다 실패했으면 기존 파일 그대로 두고(=변경 없음) 잡 실패로 표시합니다.
+  commit:
+    needs: fetch
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download any successful attempt
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: weather-ics-attempt-*
+          path: attempts
+          merge-multiple: true
+
+      - name: Use a successful attempt if available
+        id: pick
+        run: |
+          if [ -f "attempts/weather.ics" ]; then
+            echo "성공한 시도를 찾았습니다. weather.ics를 교체합니다."
+            cp attempts/weather.ics weather.ics
+            echo "any_success=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "5번의 시도 모두 API 호출에 실패했습니다. 기존 weather.ics를 그대로 둡니다."
+            echo "any_success=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Commit and Push changes
-        if: always()
+        if: steps.pick.outputs.any_success == 'true'
         run: |
           KST_TIME=$(TZ='Asia/Seoul' date '+%Y-%m-%d %H:%M:%S')
           git config --global user.name "github-actions[bot]"
@@ -71,8 +117,8 @@ jobs:
             echo "No changes to commit"
           fi
 
-      - name: Fail job if API fallback occurred
-        if: always() && steps.run_script.outcome == 'failure'
+      - name: Fail job if every attempt fell back to cache
+        if: steps.pick.outputs.any_success == 'false'
         run: |
-          echo "::error::단기 또는 중기 예보 API 호출이 실패해서 캐시 데이터로 대체됐습니다. 이 워크플로우 실행은 실패로 표시됩니다."
+          echo "::error::5번의 병렬 시도 모두 API 호출에 실패해서 캐시 데이터를 유지했습니다. 이 워크플로우 실행은 실패로 표시됩니다."
           exit 1
