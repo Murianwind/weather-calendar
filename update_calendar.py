@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import requests
 import pytz
@@ -135,6 +136,7 @@ def main():
     cal.add('X-WR-CALNAME', '기상청 날씨')
     cal.add('X-WR-TIMEZONE', 'Asia/Seoul')
     processed_dates = set()
+    api_fallback_occurred = False
 
     # --- [2. 기존 캐시 로드] ---
     cached_events = load_cached_events('weather.ics')
@@ -152,6 +154,7 @@ def main():
     short_res = fetch_api(url_short)
     if short_res is None:
         print(f"[단기예보] API 실패 (base_date={base_date}, base_time={base_time}) -> 캐시 재사용 예정")
+        api_fallback_occurred = True
     if short_res and 'body' in short_res['response']:
         for it in short_res['response']['body']['items']['item']:
             d, t, cat, val = it['fcstDate'], it['fcstTime'], it['category'], it['fcstValue']
@@ -231,6 +234,7 @@ def main():
 
     if tm_fc_dt is None:
         print(f"[중기예보] 후보 tmFc {[c.strftime('%Y%m%d%H%M') for c in tmfc_candidates]} 전부 실패 -> 캐시 재사용 예정")
+        api_fallback_occurred = True
 
     t_items, l_items = None, None
     if t_res and l_res and tm_fc_dt:
@@ -239,6 +243,7 @@ def main():
             l_items = l_res['response']['body']['items']['item'][0]
         except (KeyError, IndexError, TypeError) as e:
             print(f"[중기예보] 파싱 실패: {type(e).__name__}: {e}")
+            api_fallback_occurred = True
 
     # D+4 ~ D+10 순서대로 채우기
     cur_dt = mid_start_dt
@@ -289,6 +294,13 @@ def main():
     print("최종 processed_dates:", sorted(processed_dates))
     with open('weather.ics', 'wb') as f:
         f.write(cal.to_ical())
+
+    if api_fallback_occurred:
+        print("[결과] 일부 예보를 API에서 못 받아 캐시로 대체했습니다 (fallback 발생).")
+        sys.exit(1)
+    else:
+        print("[결과] 모든 예보를 정상적으로 갱신했습니다.")
+        sys.exit(0)
 
 if __name__ == "__main__":
     main()
