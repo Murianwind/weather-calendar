@@ -1,6 +1,5 @@
 import os
 import sys
-import time
 import requests
 import pytz
 from datetime import datetime, timedelta
@@ -39,7 +38,11 @@ def get_mid_emoji(wf):
     if '맑음' in wf: return "☀️"
     return "☀️"
 
-def fetch_api(url, retries=3, timeout=25, backoff_sec=8):
+def fetch_api(url, retries=1, timeout=10):
+    # IP 차단성 문제라면 같은 러너 안에서 재시도해봐야 어차피 같은 IP라 소용없음.
+    # 대신 워크플로우(matrix)에서 job 자체를 여러 러너로 병렬 실행해 다른 IP를 노림.
+    # 그래서 여기서는 재시도를 최소화하고(기본 1회), 타임아웃도 짧게(10초) 잡아
+    # 막힌 경우 오래 붙잡혀있지 않고 빨리 실패 판정하고 넘어가게 한다.
     safe_url = url.split('&authKey=')[0] + '&authKey=***'
     for attempt in range(1, retries + 1):
         try:
@@ -56,10 +59,7 @@ def fetch_api(url, retries=3, timeout=25, backoff_sec=8):
         except Exception as e:
             print(f"[API EXCEPTION] attempt={attempt}/{retries} {type(e).__name__}: {e} url={safe_url}")
 
-        if attempt < retries:
-            time.sleep(backoff_sec)
-
-    print(f"[API GIVEUP] {retries}회 재시도 모두 실패 url={safe_url}")
+    print(f"[API GIVEUP] {retries}회 시도 모두 실패 url={safe_url}")
     return None
 
 def get_base_datetime(now):
@@ -227,6 +227,9 @@ def main():
             f"?dataType=JSON&regId={REG_ID_LAND}&tmFc={tm_fc_str}&authKey={API_KEY}"
         )
         t_try = fetch_api(url_mid_temp)
+        if t_try is None:
+            print(f"[중기예보] tmFc={tm_fc_str} 온도 API 실패 -> 육상 API 호출은 생략하고 다음 후보로")
+            continue
         l_try = fetch_api(url_mid_land)
         if t_try and l_try:
             t_res, l_res, tm_fc_dt = t_try, l_try, candidate
