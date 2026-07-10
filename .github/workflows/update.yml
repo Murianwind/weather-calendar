@@ -46,6 +46,7 @@ jobs:
       - name: Run update script
         id: run_script
         continue-on-error: true
+        timeout-minutes: 10
         env:
           KMA_API_KEY: ${{ secrets.KMA_API_KEY }}
           KMA_NX: ${{ secrets.KMA_NX }}
@@ -54,7 +55,7 @@ jobs:
           REG_ID_TEMP: ${{ secrets.REG_ID_TEMP }}
           REG_ID_LAND: ${{ secrets.REG_ID_LAND }}
           TZ: Asia/Seoul
-        run: python update_calendar.py
+        run: python -u update_calendar.py
 
       - name: Commit and Push changes
         if: always()
