@@ -36,7 +36,16 @@ jobs:
       - name: Install dependencies
         run: pip install requests pytz icalendar
 
+      - name: Log runner IP
+        continue-on-error: true
+        run: |
+          echo "Runner outbound IP:"
+          curl -s --max-time 10 ifconfig.me || echo "(IP 조회 실패)"
+          echo ""
+
       - name: Run update script
+        id: run_script
+        continue-on-error: true
         env:
           KMA_API_KEY: ${{ secrets.KMA_API_KEY }}
           KMA_NX: ${{ secrets.KMA_NX }}
@@ -48,6 +57,7 @@ jobs:
         run: python update_calendar.py
 
       - name: Commit and Push changes
+        if: always()
         run: |
           KST_TIME=$(TZ='Asia/Seoul' date '+%Y-%m-%d %H:%M:%S')
           git config --global user.name "github-actions[bot]"
@@ -59,3 +69,9 @@ jobs:
           else
             echo "No changes to commit"
           fi
+
+      - name: Fail job if API fallback occurred
+        if: always() && steps.run_script.outcome == 'failure'
+        run: |
+          echo "::error::단기 또는 중기 예보 API 호출이 실패해서 캐시 데이터로 대체됐습니다. 이 워크플로우 실행은 실패로 표시됩니다."
+          exit 1
